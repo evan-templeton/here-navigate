@@ -3,7 +3,6 @@ package com.example.herenavigate
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
-import android.location.Location
 import android.os.Bundle
 import android.os.Looper
 import android.util.Log
@@ -19,10 +18,8 @@ import com.here.sdk.routing.*
 class MainActivity : AppCompatActivity() {
 
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
-    private var mapView: MapView? = null
-
+    private lateinit var mapView: MapView
     private lateinit var locationCallback: LocationCallback
-
     private lateinit var waypoints: List<Waypoint>
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -34,9 +31,8 @@ class MainActivity : AppCompatActivity() {
         askLocationPermission()
 
         mapView = findViewById(R.id.map_view)
-        mapView!!.onCreate(savedInstanceState)
-
-        mapView!!.setOnReadyListener { // This will be called each time after this activity is resumed.
+        mapView.onCreate(savedInstanceState)
+        mapView.setOnReadyListener { // This will be called each time after this activity is resumed.
             // It will not be called before the first map scene was loaded.
             // Any code that requires map data may not work as expected beforehand.
             Log.d("HereMaps", "HERE Rendering Engine attached.")
@@ -45,12 +41,10 @@ class MainActivity : AppCompatActivity() {
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult?) {
                 locationResult ?: return
-                for (location in locationResult.locations){
-                    println(location.longitude)
-                    println(location.latitude)
+                for (location in locationResult.locations) {
 
-                    val startCoords = GeoCoordinates(location.longitude, location.latitude)
-                    val endCoords = GeoCoordinates(40.43, -79.99)
+                    val startCoords = GeoCoordinates(location.latitude, location.longitude)
+                    val endCoords = GeoCoordinates(40.439112680705165, -79.9971769423376)
 
                     val startWaypoint = Waypoint(startCoords)
                     val destWaypoint = Waypoint(endCoords)
@@ -65,16 +59,15 @@ class MainActivity : AppCompatActivity() {
     private fun calculateRoute(waypoints: List<Waypoint>) {
         try {
             val routingEngine = RoutingEngine()
-            routingEngine.calculateRoute(waypoints, PedestrianOptions()) { routingError, routes ->
+            routingEngine.calculateRoute(waypoints, TruckOptions()) { routingError, routes ->
                 if (routingError == null) {
                     val route = routes!![0]
                     Log.d("Route Duration: ", route.durationInSeconds.toString())
-                    Log.d("Route Duration: ", route.lengthInMeters.toString())
+                    Log.d("Route Length: ", route.lengthInMeters.toString())
 //                                showRouteDetails(route)
 //                                showRouteOnMap(route)
 //                                logRouteViolations(route)
                 } else {
-                    Log.d("Waypoints: ", waypoints[0].coordinates.toString())
                     Log.d("Route error: ", routingError.toString())
                 }
             }
@@ -92,8 +85,8 @@ class MainActivity : AppCompatActivity() {
         if (requestCode == 1) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 //permission granted
-                fusedLocationProviderClient.lastLocation.addOnSuccessListener { location: Location? ->
-                        // Got last known location. In some rare situations this can be null.
+                fusedLocationProviderClient.lastLocation.addOnSuccessListener {
+                    // Got last known location. In some rare situations this can be null.
                     }
                 loadMapScene()
             }
@@ -102,12 +95,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun loadMapScene() {
         // Load a scene from the HERE SDK to render the map with a map scheme.
-        mapView!!.mapScene.loadScene(
+        mapView.mapScene.loadScene(
                 MapScheme.NORMAL_DAY
         ) { mapError ->
             if (mapError == null) {
                 val distanceInMeters = (1000 * 10).toDouble()
-                mapView!!.camera.lookAt(
+                mapView.camera.lookAt(
                         GeoCoordinates(52.530932, 13.384915), distanceInMeters
                 )
             } else {
@@ -118,12 +111,12 @@ class MainActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
-        mapView!!.onPause()
+        mapView.onPause()
     }
 
     override fun onResume() {
         super.onResume()
-        mapView!!.onResume()
+        mapView.onResume()
         startLocationUpdates()
     }
 
@@ -137,7 +130,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        mapView!!.onDestroy()
+        mapView.onDestroy()
     }
 
 }
